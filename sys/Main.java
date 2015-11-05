@@ -23,10 +23,6 @@ public class Main {
 		name = new Name("testtext");
 		path = new Path("CDrive\\");
 		sys.create(EntityType.TextFile, name, path);
-
-		name = new Name("testzip");
-		path = new Path("CDrive\\");
-		sys.create(EntityType.ZipFile, name, path);
 		
 		name = new Name("ReallyAwesomeDocument");
 		path = new Path("CDrive\\Documents\\");
@@ -42,17 +38,39 @@ public class Main {
 		
 		name = new Name("AnotherAwesomeDocument");
 		path = new Path("CDrive\\Documents\\");
-		sys.create(EntityType.TextFile, name, path);
+		sys.create(EntityType.TextFile, name, path, "dddddddddddddddddd");
 		
+		name = new Name("moretext");
+		path = new Path("CDrive\\Documents\\");
+		String content = "this is text!!!";
+		sys.create(EntityType.TextFile, name, path, content);
+				
+		name = new Name("DDrive");
+		path = new Path("");
+		sys.create(EntityType.Drive, name, path);
+		
+		name = new Name("testzip");
+		path = new Path("CDrive\\");
+		sys.create(EntityType.ZipFile, name, path);
+		
+		name = new Name("secrets");
+		path = new Path("CDrive\\testzip\\");
+		sys.create(EntityType.TextFile, name, path, "dddddddddddddddddd");
+		
+		name = new Name("keys");
+		path = new Path("CDrive\\testzip\\");
+		sys.create(EntityType.TextFile, name, path, "ddddddddddddddddddfffffffffff");
+
 		sys.printFileSystem();
 		
 		while(true) {
 			
 			//Valid Commands
-			//create type(drive, folder, text, zip) name parentPath
+			//create type(drive, folder, text, zip) name parentPath (optonal 5th argument of content)
 			//delete path
 			//move sourcePath destinationPath
 			//write path content
+			//print (file system hierarchy
 			
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 	        System.out.println("Enter Command:");
@@ -61,19 +79,31 @@ public class Main {
 	        String[] arguments = s.split("\\s+");
 	        
 	        if(arguments[0].toLowerCase().equals("create")) {
-	        	if(arguments.length >= 3) {
+	        	if(arguments.length >= 3 && arguments.length <= 5) {
 		        	EntityType type = getType(arguments[1]);
-		        	name = new Name(arguments[2]);
-		        	if(arguments.length == 4)
-		        		path = new Path(arguments[3]);
+		        	if(type != null) {
+			        	name = new Name(arguments[2]);
+			        	if(arguments.length == 5 && type == EntityType.TextFile) {
+			        		path = new Path(arguments[3]);
+			        		content = arguments[4];
+			        		sys.create(type, name, path, content);
+			        	}
+			        	if(arguments.length == 4) {
+			        		path = new Path(arguments[3]);
+			        		sys.create(type, name, path);
+			        	}
+			        	else if(arguments.length == 3) { 
+			        		path = new Path("");
+			        		sys.create(type, name, path);
+			        	}
+		        	}
 		        	else
-		        		path = new Path("");
-		        	sys.create(type, name, path);
+		        		System.out.println("Error : Invalid entity type");
 	        	}
 	        	else
-	        		System.out.println("Invalid Number of Arguments");
+	        		System.out.println("Error : Invalid Number of Arguments");
 	        }
-	        if(arguments[0].toLowerCase().equals("delete")) {
+	        else if(arguments[0].toLowerCase().equals("delete")) {
 	        	if(arguments.length == 2) {
 		        	path = new Path(arguments[1]);
 		        	sys.delete(path);
@@ -81,7 +111,7 @@ public class Main {
 	        	else
 	        		System.out.println("Invalid Number of Arguments");
 	        }
-	        if(arguments[0].toLowerCase().equals("move")) {
+	        else if(arguments[0].toLowerCase().equals("move")) {
 	        	if(arguments.length == 3) {
 		        	Path source = new Path(arguments[1]);
 		        	Path destination = new Path(arguments[2]);
@@ -90,17 +120,21 @@ public class Main {
 	        	else
 	        		System.out.println("Invalid Number of Arguments");
 	        }
-	        if(arguments[0].toLowerCase().equals("write")) {
+	        else if(arguments[0].toLowerCase().equals("write")) {
 	        	if(arguments.length == 3) {
 		        	path = new Path(arguments[1]);
-		        	String content = arguments[2];
+		        	content = arguments[2];
 		        	sys.writeToFile(path, content);
 	        	}
 	        	else
 	        		System.out.println("Invalid Number of Arguments");
 	        }
 	        
-	        sys.printFileSystem();
+	        else if(arguments[0].toLowerCase().equals("print"))
+	        	sys.printFileSystem();
+	        
+	        else
+	        	System.out.println("Error : " + arguments[0] + " invalid command");
 		}
 		
 	}

@@ -16,8 +16,16 @@ public abstract class Entity {
 		this.name = name;
 		this.path = path;
 		directoriesAndFiles = new ArrayList<>();
+		size = 0;
 	}
 	
+	public Entity(Name name, Path path, int length) {
+		this.name = name;
+		this.path = path;
+		directoriesAndFiles = new ArrayList<>();
+		size = length;
+	}
+
 	public Name getName() {
 		return name;
 	}
@@ -28,6 +36,10 @@ public abstract class Entity {
 	
 	public int getSize() {
 		return size;
+	}
+	
+	public void setSize(int size) {
+		this.size = size;
 	}
 
 	public void add(Entity entry) {
@@ -57,5 +69,6 @@ public abstract class Entity {
 	public abstract EntityType getType();
 
 	public void setContent(String content) {}
+
 
 }

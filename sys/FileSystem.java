@@ -15,28 +15,38 @@ public class FileSystem {
 	}
 	
 	void create(EntityType type, Name name, Path path) {
-		switch (type) {
-			case Drive:
-			createDrive(name, path);
-				break;
-			case Folder:
-				createFolder(name, path);
-				break;
-			case TextFile:
-				createTextFile(name, path, "");
-				break;
-			case ZipFile:
-				createZipFile(name, path);
-				break;
-			default: 
-				break;
+		if(name.toString() != null) {
+			switch (type) {
+				case Drive:
+					createDrive(name, path);
+					break;
+				case Folder:
+					createFolder(name, path);
+					break;
+				case TextFile:
+					createTextFile(name, path, "");
+					break;
+				case ZipFile:
+					createZipFile(name, path);
+					break;
+				default: 
+					break;
+			}
 		}
+		else
+			System.out.println("Error : name is invalid");
 	}
 	
 	void create(EntityType type, Name name, Path path, String content) {
 
-		if(type == EntityType.TextFile)
-			createTextFile(name, path, content);
+		if(type == EntityType.TextFile) {
+			if(name.toString() != null) {
+				createTextFile(name, path, content);
+			}
+			else {
+				System.out.println("Error : Invalid Name");
+			}
+		}
 		else
 			System.out.println("Error : Cannot specify content for non text file");
 		
@@ -50,21 +60,25 @@ public class FileSystem {
 			deleteDrive(segments[0]);
 		else {
 			Entity parent = getParentByPath(path, segments);
+			if(parent != null) {
 			
-			String entryName = segments[segments.length-1];
-			Entity entryToRemove = null;
-			
-			
-			for(Entity entry : parent.getDirectoriesAndFiles()) {
-				if(entry.getName().toString().equals(entryName)) {
-					entryToRemove = entry;
+				String entryName = segments[segments.length-1];
+				Entity entryToRemove = null;
+				
+				
+				for(Entity entry : parent.getDirectoriesAndFiles()) {
+					if(entry.getName().toString().equals(entryName)) {
+						entryToRemove = entry;
+					}
 				}
+				
+				if(entryToRemove != null)
+					parent.getDirectoriesAndFiles().remove(entryToRemove);
+				else
+					System.out.println("Error : Could not delete at " + path.toString() + ". Does not exist");
 			}
-			
-			if(entryToRemove != null)
-				parent.getDirectoriesAndFiles().remove(entryToRemove);
 			else
-				System.out.println("Error : Could not delete at " + path.toString());
+				System.out.println("Error : " + path.toString() + " invalid path");
 		}
 	}
 	
@@ -94,37 +108,69 @@ public class FileSystem {
 
 	void move(Path source, Path destination) {
 		
-		Entity entry = getByPath(source);
-		delete(source);
 		Entity parent = getByPath(destination);
-		parent.getDirectoriesAndFiles().add(entry);
+		if(parent != null) {
+			if(!(parent instanceof TextFile)) {
+				Entity entry = getByPath(source);
+				if(entry != null) {
+					if(!(entry instanceof Drive)) {
+						delete(source);
+						parent.getDirectoriesAndFiles().add(entry);
+					}
+					else
+						System.out.println("Error : Cannot move entities of type Drive");
+				}
+				else
+					System.out.println("Error : path of object to be moved invalid");
+			}
+			else
+				System.out.println("Error : cannot move to text file.  Invalid operation");
+		}
+		else
+			System.out.println("Error : path " + destination.toString() + " invalid");
 	}
 
 	void writeToFile(Path path, String content) {
 		
 		Entity entry = getByPath(path);
-		
-		if(entry instanceof TextFile)
-			entry.setContent(content);
+		if(entry != null) {
+			if(entry instanceof TextFile) {
+				entry.setContent(content);
+				entry.setSize(content.length());
+			}
+			else
+				System.out.println("Cannot write to " + entry.getName().toString()
+						+ " : Not a text file");
+		}
 		else
-			System.out.println("Cannot write to " + entry.getName().toString()
-					+ " : Not a text file");
+			System.out.println("Error : Path " + path.toString() + " Invalid");
 	}
 	
 	private void createDrive(Name name, Path path) {
 		if(pathIsEmpty(path)) {
 			Drive drive = new Drive(name, path);
-			Drives.add(drive);
+			if(!driveExists(name))
+				Drives.add(drive);
+			else
+				System.out.println("Drive : " + drive.getName().toString() + " already exists");
 		}
+	}
+
+	private boolean driveExists(Name name) {
+		for(Drive d : Drives) {
+			if(d.getName().toString().equals(name.toString()))
+				return true;
+		}
+		return false;
 	}
 
 	private void createZipFile(Name name, Path path) {
 		Entity parent = getByPath(path);
 		Entity entry = new ZipFile(name, path);
 		if(parent != null)
-			parent.getDirectoriesAndFiles().add(entry);
+			addToParent(name, parent, entry);
 		else
-			System.out.println("No such path : " + path.toString());
+			System.out.println("Error : Must specify valid path ");
 	}
 
 	private void createTextFile(Name name, Path path, String content) {
@@ -132,9 +178,9 @@ public class FileSystem {
 		Entity entry = new TextFile(name, path, content);
 		if(!(parent instanceof TextFile)) {
 			if(parent != null)
-				parent.getDirectoriesAndFiles().add(entry);
+				addToParent(name, parent, entry);
 			else
-				System.out.println("No such path : " + path.toString());
+				System.out.println("Error : Must specify valid path ");
 		}
 		else
 			System.out.println("Error : Text files have no subdirectories");
@@ -143,10 +189,18 @@ public class FileSystem {
 	private void createFolder(Name name, Path path) {
 		Entity parent = getByPath(path);
 		Entity entry = new Folder(name, path);
-		if(parent != null)
+		if(parent != null){
+			addToParent(name, parent, entry);
+		}
+		else
+			System.out.println("Error : Must specify valid path ");
+	}
+
+	private void addToParent(Name name, Entity parent, Entity entry) {
+		if(!parent.containsItem(name.toString()))
 			parent.getDirectoriesAndFiles().add(entry);
 		else
-			System.out.println("No such path : " + path.toString());
+			System.out.println("Error : " +  name.toString() + " already exists in specified directory");
 	}
 	
 
@@ -160,7 +214,7 @@ public class FileSystem {
 					parent = parent.getEntityByName(pathSegments[i]);
 				}
 				else {
-					System.out.println("No such directory or file: " + pathSegments[i]);
+					//System.out.println("No such directory or file: " + pathSegments[i]);
 					return null;
 				}
 			}
@@ -173,7 +227,7 @@ public class FileSystem {
 			if(name.equals(d.getName().toString()))
 				return d;
 		}
-		System.out.println("Error : No such drive");
+		//System.out.println("Error : No such drive");
 		return null;
 	}
 	
@@ -187,6 +241,8 @@ public class FileSystem {
 		for(Drive d : Drives) {
 			System.out.print(d.getName().toString());
 			printType(d);
+			d.setSize(calculateSize(d));
+			System.out.println(" : Size - " + Integer.toString(d.getSize()));
 			if(d.getDirectoriesAndFiles().size() > 0) {
 				level++;
 				printRecursively(d.getDirectoriesAndFiles(), level);
@@ -199,8 +255,10 @@ public class FileSystem {
 		for(Entity entry : directoriesAndFiles) {
 			for(int i = 0; i < level; i++)
 				System.out.print("-");
+			entry.setSize(calculateSize(entry));
 			System.out.print(entry.getName().toString());
 			printType(entry);
+			System.out.println(" : Size - " + Integer.toString(entry.getSize()));
 			if(!(entry instanceof TextFile)) {
 				if(entry.getDirectoriesAndFiles().size() > 0) {
 					level++;
@@ -214,13 +272,13 @@ public class FileSystem {
 	private void printType(Entity entry) {
 
 		if(entry instanceof Drive)
-			System.out.println("(Drive)");
+			System.out.print("(Drive)");
 		if(entry instanceof Folder)
-			System.out.println("(Folder)");
+			System.out.print("(Folder)");
 		if(entry instanceof TextFile)
-			System.out.println(".txt");
+			System.out.print(".txt");
 		if(entry instanceof ZipFile)
-			System.out.println(".zip");
+			System.out.print(".zip");
 		
 	}
 
@@ -231,6 +289,39 @@ public class FileSystem {
 		}
 		else
 			return true;
+	}
+	
+	private int calculateSize(Entity entry) {
+		
+		int size = 0;
+		
+		if(entry instanceof TextFile)
+			return entry.getSize();
+		
+		else 
+			for(Entity e : entry.getDirectoriesAndFiles())  {
+				if(e instanceof ZipFile)
+					size += (getSizeRecursively(e,0)/2);
+				else
+					size += getSizeRecursively(e, 0);
+			}
+		
+		return size;
+	}
+
+	private int getSizeRecursively(Entity entry, int size) {
+		
+		if(entry instanceof TextFile)
+			size += entry.getSize();
+		else 
+			for(Entity e : entry.getDirectoriesAndFiles()) {
+				if(e instanceof ZipFile)
+					size += (getSizeRecursively(e,0)/2);
+				else
+					size += getSizeRecursively(e, 0);
+			}
+		
+		return size;
 	}
 	
 }

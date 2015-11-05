@@ -13,4 +13,9 @@ public class ZipFile extends Entity{
 		return EntityType.ZipFile;
 	}
 	
+	@Override
+	public void setSize(int length) {
+		super.setSize(length/2);
+	}
+	
 }

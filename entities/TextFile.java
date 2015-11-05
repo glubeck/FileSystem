@@ -9,7 +9,7 @@ public class TextFile extends Entity{
 	private String content;
 	
 	public TextFile(Name name, Path path, String content) {
-		super(name, path);
+		super(name, path, content.length());
 		this.content = content;
 		
 	}
